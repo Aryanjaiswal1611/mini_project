@@ -27,7 +27,7 @@ router.post('/place', verifyToken, async (req, res) => {
 
         // Get restaurantId from the first item
         const restaurantId = cartItems[0].food_id.restaurantId;
-        
+
         if (!restaurantId) {
             return res.json({ success: false, message: 'Error: Items in cart are not associated with a restaurant.' });
         }
@@ -41,15 +41,17 @@ router.post('/place', verifyToken, async (req, res) => {
 
         // Build order items
         const items = cartItems.map(ci => ({
-            food_id:   ci.food_id._id,
+            food_id: ci.food_id._id,
             food_name: ci.food_id.food_name,
-            price:     ci.food_id.price,
-            quantity:  ci.quantity,
+            price: ci.food_id.price,
+            quantity: ci.quantity,
         }));
 
         const subtotal = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
         const delivery = 30.00;
         const total_price = parseFloat((subtotal + delivery).toFixed(2));
+        const verificationCode = Math.floor(1000 + Math.random() * 9000).toString();
+
 
         // Create order
         const order = await Order.create({
@@ -68,6 +70,7 @@ router.post('/place', verifyToken, async (req, res) => {
             orderStatus: 'Placed',
             restaurantStatus: 'Pending',
             estimatedDeliveryTime: '30-45 mins',
+            verificationCode: verificationCode,
         });
 
         // Emit new order event for SSE
@@ -105,6 +108,7 @@ router.get('/:id', verifyToken, async (req, res) => {
         const userId = req.user.id;
         const { id } = req.params;
 
+
         if (!mongoose.Types.ObjectId.isValid(id))
             return res.status(404).json({ success: false, message: 'Order not found.' });
 
@@ -112,7 +116,7 @@ router.get('/:id', verifyToken, async (req, res) => {
         if (!order)
             return res.status(404).json({ success: false, message: 'Order not found.' });
 
-        res.json({ success: true, order });
+        res.json({ success: true, order, verificationCode: order.verificationCode });
     } catch (err) {
         console.error('Order by ID error:', err);
         res.status(500).json({ success: false, message: 'Server error.' });
@@ -139,8 +143,8 @@ router.get('/restaurant/:restaurantId', async (req, res) => {
         }
 
         const orders = await Order.find({ restaurantId })
-                                  .populate('userId', 'name email phone')
-                                  .sort({ createdAt: -1 });
+            .populate('userId', 'name email phone')
+            .sort({ createdAt: -1 });
         res.json({ success: true, orders });
     } catch (err) {
         console.error('Fetch restaurant orders error:', err);

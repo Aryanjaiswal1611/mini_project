@@ -1,53 +1,230 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rider Dashboard - QuickBite Delivery</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="/css/style.css">
     <style>
-        body { background: #f8fafc; }
-        .dashboard-header { background: #1a1e23; color: white; padding: 20px 30px; display: flex; justify-content: space-between; align-items: center; }
-        .rider-profile { display: flex; align-items: center; gap: 15px; }
-        .rider-avatar { width: 45px; height: 45px; border-radius: 50%; background: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; font-weight: 700; }
-        
-        .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin: 20px; }
-        .stat-card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); text-align: center; }
-        .stat-card h3 { font-size: 0.8rem; color: #64748b; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.5px; }
-        .stat-card p { font-size: 1.5rem; font-weight: 700; color: #1e293b; }
-        
-        .status-toggle { margin: 20px; background: white; padding: 15px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-        .toggle-switch { position: relative; display: inline-block; width: 60px; height: 34px; }
-        .toggle-switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
-        .slider:before { position: absolute; content: ""; height: 26px; width: 26px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
-        input:checked + .slider { background-color: #22c55e; }
-        input:checked + .slider:before { transform: translateX(26px); }
-        
-        .section-title { margin: 25px 20px 15px; font-weight: 700; color: #334155; font-size: 1.1rem; }
-        .orders-list { padding: 0 20px 40px; }
-        .order-item { background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border-left: 5px solid var(--primary); }
-        .order-row { display: flex; justify-content: space-between; margin-bottom: 15px; }
-        .rest-name { font-weight: 700; font-size: 1.1rem; color: #1e293b; }
-        .order-dist { font-size: 0.85rem; color: #64748b; }
-        
-        .address-box { background: #f1f5f9; padding: 12px; border-radius: 8px; margin-bottom: 15px; font-size: 0.9rem; }
-        .address-box i { color: #94a3b8; margin-right: 8px; }
-        
-        .action-btns { display: flex; gap: 10px; }
-        .btn-status { flex: 1; padding: 12px; border-radius: 8px; font-weight: 600; cursor: pointer; border: none; transition: 0.2s; }
-        .btn-picked { background: #3b82f6; color: white; }
-        .btn-delivered { background: #22c55e; color: white; }
-        
-        .logout-btn { background: none; border: 1px solid #475569; color: #94a3b8; padding: 5px 12px; border-radius: 4px; font-size: 0.8rem; cursor: pointer; }
-        
-        .empty-state { text-align: center; padding: 40px; color: #94a3b8; }
-        .empty-state i { font-size: 3rem; margin-bottom: 10px; }
+        body {
+            background: #f8fafc;
+        }
+
+        .dashboard-header {
+            background: #1a1e23;
+            color: white;
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .rider-profile {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .rider-avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            text-align: center;
+        }
+
+        .stat-card h3 {
+            font-size: 0.8rem;
+            color: #64748b;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-card p {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1e293b;
+        }
+
+        .status-toggle {
+            margin: 20px;
+            background: white;
+            padding: 15px;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked+.slider {
+            background-color: #22c55e;
+        }
+
+        input:checked+.slider:before {
+            transform: translateX(26px);
+        }
+
+        .section-title {
+            margin: 25px 20px 15px;
+            font-weight: 700;
+            color: #334155;
+            font-size: 1.1rem;
+        }
+
+        .orders-list {
+            padding: 0 20px 40px;
+        }
+
+        .order-item {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            border-left: 5px solid var(--primary);
+        }
+
+        .order-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+
+        .rest-name {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: #1e293b;
+        }
+
+        .order-dist {
+            font-size: 0.85rem;
+            color: #64748b;
+        }
+
+        .address-box {
+            background: #f1f5f9;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 0.9rem;
+        }
+
+        .address-box i {
+            color: #94a3b8;
+            margin-right: 8px;
+        }
+
+        .action-btns {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-status {
+            flex: 1;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: 0.2s;
+        }
+
+        .btn-picked {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .btn-delivered {
+            background: #22c55e;
+            color: white;
+        }
+
+        .logout-btn {
+            background: none;
+            border: 1px solid #475569;
+            color: #94a3b8;
+            padding: 5px 12px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #94a3b8;
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 10px;
+        }
     </style>
 </head>
+
 <body>
     <header class="dashboard-header">
         <div class="rider-profile">
@@ -117,11 +294,11 @@
                 document.getElementById('totalEarnings').textContent = data.partner.earnings || 0;
                 document.getElementById('totalDeliveries').textContent = data.partner.total_deliveries || 0;
                 document.getElementById('avgRating').textContent = (data.partner.averageRating || 0).toFixed(1);
-                
+
                 const toggle = document.getElementById('onlineToggle');
                 toggle.checked = data.partner.is_online;
                 updateStatusText(data.partner.is_online);
-                
+
                 if (data.partner.is_online) startTracking();
                 loadOrders();
             } else {
@@ -142,7 +319,7 @@
             });
             const data = await res.json();
             const list = document.getElementById('ordersList');
-            
+
             if (data.success && data.orders.length > 0) {
                 list.innerHTML = data.orders.map(o => `
                     <div class="order-item">
@@ -157,10 +334,13 @@
                             <i class="fas fa-map-marker-alt"></i> <strong>Deliver to:</strong> ${o.delivery_address}
                         </div>
                         <div class="action-btns">
-                            ${o.orderStatus === 'Preparing' ? 
-                                `<button class="btn-status btn-picked" onclick="updateStatus('${o._id}', 'Picked Up')">Mark Picked Up</button>` :
-                                `<button class="btn-status btn-delivered" onclick="updateStatus('${o._id}', 'Delivered')">Mark Delivered</button>`
-                            }
+                            ${o.orderStatus === 'Preparing' ?
+                        `<button class="btn-status btn-picked" onclick="updateStatus('${o._id}', 'Picked Up')">Mark Picked Up</button>` :
+                        `<div style="width: 100%;">
+                                <input type="text" id="code-${o._id}" placeholder="Enter 4-digit code" maxlength="4" style="width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #cbd5e1; text-align: center; font-weight: 700; letter-spacing: 2px;">
+                                <button class="btn-status btn-delivered" onclick="updateStatus('${o._id}', 'Delivered')">Verify & Deliver</button>
+                            </div>`
+                    }
                         </div>
                     </div>
                 `).join('');
@@ -170,19 +350,30 @@
         }
 
         async function updateStatus(orderId, status) {
+            let verificationCode = null;
+            if (status === 'Delivered') {
+                verificationCode = document.getElementById(`code-${orderId}`).value;
+                if (!verificationCode || verificationCode.length !== 4) {
+                    alert('Please enter a valid 4-digit verification code.');
+                    return;
+                }
+            }
+
             if (!confirm(`Confirm ${status}?`)) return;
             const res = await fetch(`/api/delivery/orders/${orderId}/status`, {
                 method: 'POST',
-                headers: { 
+                headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ status })
+                body: JSON.stringify({ status, verificationCode })
             });
             const data = await res.json();
             if (data.success) {
                 loadOrders();
                 init(); // Refresh earnings/deliveries
+            } else {
+                alert(data.message || 'Verification failed. Please try again.');
             }
         }
 
@@ -190,7 +381,7 @@
             const is_online = e.target.checked;
             const res = await fetch('/api/delivery/toggle-status', {
                 method: 'POST',
-                headers: { 
+                headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
                 },
@@ -207,7 +398,7 @@
         function startTracking() {
             if (socket) return;
             socket = io();
-            
+
             // Mock location data (Delhi areas for example)
             let baseLat = 28.6139;
             let baseLng = 77.2090;
@@ -251,7 +442,7 @@
         }
 
         document.getElementById('logoutBtn').addEventListener('click', () => {
-            localStorage.removeItem('delivery_token');
+            localStorage.removeItem('deliveryToken');
             window.location.href = '/delivery/login.html';
         });
 
@@ -259,4 +450,5 @@
         setInterval(loadOrders, 10000); // Check for new assignments
     </script>
 </body>
+
 </html>

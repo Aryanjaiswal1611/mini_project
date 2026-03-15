@@ -53,6 +53,7 @@
             if (!data.success) { window.location.href = '/'; return; }
 
             const order = data.order;
+            const verificationCode = data.order.verificationCode;
             const padId = String(order.order_id || orderId).padStart(6, '0');
 
             document.getElementById('successContent').innerHTML = `
@@ -64,6 +65,11 @@
                 <div class="label">Order ID</div>
                 <div class="value">#${padId}</div>
             </div>
+            <div class="order-id-card" style="margin-top: -15px; background: #e0f2fe; border-color: #7dd3fc;">
+                <div class="label" style="color: #0369a1;">Verification Code</div>
+                <div class="value" style="color: #0369a1; letter-spacing: 4px;">${verificationCode}</div>
+            </div>
+            <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 25px;">Please share this 4-digit code with the rider when they arrive to confirm your delivery.</p>
             <div style="background:#f8f4f0;border-radius:12px;padding:20px;margin-bottom:28px;text-align:left">
                 <div style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:0.875rem">
                     <span style="color:var(--text-muted)">Total Amount</span>

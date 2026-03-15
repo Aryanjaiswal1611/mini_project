@@ -111,11 +111,23 @@ router.get('/orders', ...requireDelivery, async (req, res) => {
 router.post('/orders/:id/status', ...requireDelivery, async (req, res) => {
     try {
         const { id } = req.params;
-        const { status } = req.body;
+        const { status, verificationCode } = req.body;
         
         const validStatuses = ['Picked Up', 'Out for Delivery', 'Delivered'];
         if (!validStatuses.includes(status)) {
             return res.status(400).json({ success: false, message: 'Invalid status' });
+        }
+
+        const order = await Order.findOne({ _id: id, delivery_partner_id: req.user.id });
+        if (!order) return res.status(404).json({ success: false, message: 'Order not found or not assigned to you' });
+
+        if (status === 'Delivered') {
+            if (!verificationCode) {
+                return res.status(400).json({ success: false, message: 'Verification code is required' });
+            }
+            if (order.verificationCode !== verificationCode) {
+                return res.status(400).json({ success: false, message: 'Incorrect verification code. Access denied.' });
+            }
         }
 
         const updateData = {};
@@ -129,13 +141,13 @@ router.post('/orders/:id/status', ...requireDelivery, async (req, res) => {
             updateData['timeline.delivered_at'] = new Date();
         }
 
-        const order = await Order.findOneAndUpdate(
+        const updatedOrder = await Order.findOneAndUpdate(
             { _id: id, delivery_partner_id: req.user.id },
             updateData,
             { new: true }
         );
 
-        if (!order) return res.status(404).json({ success: false, message: 'Order not found or not assigned to you' });
+        if (!updatedOrder) return res.status(404).json({ success: false, message: 'Order not found or not assigned to you' });
 
         // If delivered, credit earnings to rider (fixed ₹50 per delivery)
         if (status === 'Delivered') {
@@ -145,9 +157,9 @@ router.post('/orders/:id/status', ...requireDelivery, async (req, res) => {
         }
 
         // Notify via socket.io
-        req.app.emit('order_status_update', { orderId: order._id, status: order.orderStatus });
+        req.app.emit('order_status_update', { orderId: updatedOrder._id, status: updatedOrder.orderStatus });
 
-        res.json({ success: true, order });
+        res.json({ success: true, order: updatedOrder });
     } catch (error) {
         console.error('Update delivery status error:', error);
         res.status(500).json({ success: false, message: 'Server error updating status' });

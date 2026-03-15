@@ -68,6 +68,10 @@ const orderSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Feedback',
         default: null
+    },
+    verificationCode: {
+        type: String,
+        required: true
     }
 }, { timestamps: true });
 

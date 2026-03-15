@@ -197,7 +197,7 @@
             try {
                 const res = await fetch('/api/orders/place', {
                     method: 'POST',
-                    headers: { 
+                    headers: {
                         'Content-Type': 'application/json',
                         ...getAuthHeaders()
                     },
@@ -207,6 +207,7 @@
                 if (data.success) {
                     showToast('Order placed! Redirecting…', 'success');
                     setTimeout(() => window.location.href = data.redirect, 800);
+
                 } else {
                     const box = document.getElementById('alertBox');
                     box.style.display = 'flex';
@@ -222,7 +223,7 @@
             }
         }
 
-        window.togglePaymentDetails = function(val) {
+        window.togglePaymentDetails = function (val) {
             const upiDetails = document.getElementById('upiDetails');
             const cardDetails = document.getElementById('cardDetails');
             if (upiDetails) upiDetails.style.display = val === 'upi' ? 'block' : 'none';
