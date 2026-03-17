@@ -119,12 +119,21 @@ router.post('/logout', (req, res) => {
 });
 
 // ── GET /api/me ─────────────────────────────────────────
-router.get('/me', verifyToken, (req, res) => {
-    res.json({
-        loggedIn: true,
-        user_id: req.user.id,
-        role: req.user.role
-    });
+router.get('/me', verifyToken, async (req, res) => {
+    try {
+        const User = require('../models/User');
+        const user = await User.findById(req.user.id).select('name email role');
+        if (!user) return res.status(404).json({ loggedIn: false });
+        res.json({
+            loggedIn: true,
+            user_id: user._id,
+            user_name: user.name,
+            role: user.role
+        });
+    } catch (err) {
+        console.error('Me route error:', err);
+        res.status(500).json({ loggedIn: false });
+    }
 });
 
 module.exports = router;

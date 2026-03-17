@@ -24,7 +24,7 @@ router.post('/signup', async (req, res) => {
             name, email, phone, vehicle_type, password: hashedPassword
         });
 
-        const token = jwt.sign({ id: newPartner._id }, JWT_SECRET, { expiresIn: '7d' });
+        const token = jwt.sign({ id: newPartner._id, role: 'delivery' }, JWT_SECRET, { expiresIn: '7d' });
         
         res.status(201).json({ 
             success: true, 
@@ -125,7 +125,7 @@ router.post('/orders/:id/status', ...requireDelivery, async (req, res) => {
             if (!verificationCode) {
                 return res.status(400).json({ success: false, message: 'Verification code is required' });
             }
-            if (order.verificationCode !== verificationCode) {
+            if (String(order.verificationCode).trim() !== String(verificationCode).trim()) {
                 return res.status(400).json({ success: false, message: 'Incorrect verification code. Access denied.' });
             }
         }

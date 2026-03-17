@@ -48,7 +48,7 @@
             const orderId = new URLSearchParams(window.location.search).get('order_id');
             if (!orderId) { window.location.href = '/'; return; }
 
-            const res = await fetch(`/api/orders/${orderId}`);
+            const res = await fetch(`/api/orders/${orderId}`, { headers: getAuthHeaders() });
             const data = await res.json();
             if (!data.success) { window.location.href = '/'; return; }
 

@@ -40,6 +40,20 @@ router.get('/featured', async (req, res) => {
     }
 });
 
+// ── GET /api/foods/recommended – popular items based on order count ───────────
+router.get('/recommended', async (req, res) => {
+    try {
+        const foods = await FoodItem.find({ availability: true })
+                                    .populate('restaurantId', 'isLoggedIn isActive')
+                                    .sort({ orderCount: -1 })
+                                    .limit(4);
+        res.json({ success: true, foods });
+    } catch (err) {
+        console.error('Recommended fetch error:', err);
+        res.status(500).json({ success: false, message: 'Server error.' });
+    }
+});
+
 // ── GET /api/foods/:id – single food item ─────────────────────────────────────
 router.get('/:id', async (req, res) => {
     try {

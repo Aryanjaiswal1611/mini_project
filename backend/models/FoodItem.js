@@ -37,6 +37,10 @@ const foodItemSchema = new mongoose.Schema({
     availability: {
         type: Boolean,
         default: true
+    },
+    orderCount: {
+        type: Number,
+        default: 0
     }
 }, { timestamps: true });
 

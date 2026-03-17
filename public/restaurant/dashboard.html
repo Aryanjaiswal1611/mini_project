@@ -434,6 +434,12 @@
 
         document.getElementById('refreshBtn').addEventListener('click', loadOrders);
         document.getElementById('logoutBtn').addEventListener('click', async () => {
+            try {
+                await fetch('/api/restaurant/logout', {
+                    method: 'POST',
+                    headers: getAuthHeaders()
+                });
+            } catch (e) { /* ignore network error on logout */ }
             localStorage.removeItem('restaurantToken');
             window.location.href = '/restaurant/login.html';
         });

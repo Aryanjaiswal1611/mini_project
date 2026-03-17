@@ -5,6 +5,7 @@ const session = require('express-session');
 const path = require('path');
 const http = require('http');
 const { Server } = require('socket.io');
+const rateLimit = require('express-rate-limit');
 
 const connectDB = require('./config/db');
 
@@ -32,6 +33,18 @@ connectDB();
 // ── Body Parser ────────────────────────────────────────────
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// ── Rate Limiting ──────────────────────────────────────────
+const globalLimiter = rateLimit({
+    windowMs: 10 * 1000, // 15 minutes
+    max: 100, // Limit each IP to 100 requests per `window` (here, per 15 minutes)
+    message: 'Too many requests from this IP, please try again after 10 sec',
+    standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+    legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+});
+
+// Apply the rate limiting middleware to all requests
+app.use(globalLimiter);
 
 // ── Session Setup ──────────────────────────────────────────
 app.use(session({

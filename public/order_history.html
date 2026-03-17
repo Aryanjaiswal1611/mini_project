@@ -112,6 +112,9 @@
                             : `<button onclick="openFeedbackModal('${o._id}')" class="btn btn-primary" style="padding: 4px 8px; font-size: 0.75rem; margin-top: 8px;">Rate Order</button>`)
                         : '<a href="/tracking.html?order_id=' + o._id + '" class="btn btn-outline" style="padding: 4px 8px; font-size: 0.75rem; margin-top: 8px;">Track Order</a>'
                     }
+                    ${o.orderStatus === 'Delivered' 
+                        ? `<button onclick="openDriverFeedbackModal('${o._id}')" class="btn btn-outline" style="padding: 4px 8px; font-size: 0.75rem; margin-top: 8px; margin-left: 4px;">Rate Driver</button>` 
+                        : ''}
                 </td>
             </tr>`;
             }).join('');
@@ -143,6 +146,27 @@
                     loadOrders();
                 } else {
                     showToast(data.message || 'Error submitting feedback', 'error');
+                }
+            } catch (err) {
+                showToast('Network error', 'error');
+            }
+        }
+
+        async function openDriverFeedbackModal(orderId) {
+            const rating = prompt("Rate your delivery driver (1-5 stars):", "5");
+            if (!rating || isNaN(rating) || rating < 1 || rating > 5) return;
+            
+            try {
+                const res = await fetch(`/api/orders/${orderId}/rate-delivery`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+                    body: JSON.stringify({ rating: parseInt(rating) })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast('Driver rated successfully!', 'success');
+                } else {
+                    showToast(data.message || 'Error submitting driver rating', 'error');
                 }
             } catch (err) {
                 showToast('Network error', 'error');

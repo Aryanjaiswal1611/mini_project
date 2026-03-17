@@ -80,6 +80,24 @@
         </div>
     </section>
 
+    <!-- ===== RECOMMENDED FOR YOU ===== -->
+    <section class="section" style="background:#f9f9f9;">
+        <div class="container">
+            <div class="section-header">
+                <div class="section-tag"><i class="fas fa-thumbs-up"></i> Most Loved</div>
+                <h2 class="section-title">Recommended For You</h2>
+                <p class="section-subtitle">Our most frequently ordered and highly rated dishes</p>
+            </div>
+            <div class="food-grid" id="recommendedGrid">
+                <!-- Loaded via JS -->
+                <div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-muted)">
+                    <div class="spinner" style="margin:0 auto 16px"></div>
+                    <p>Loading recommendations…</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- ===== FEATURED DISHES ===== -->
     <section class="section" style="background:#fff;">
         <div class="container">
@@ -199,7 +217,29 @@ async function loadFeatured() {
         document.getElementById('featuredGrid').innerHTML = '<p style="grid-column:1/-1;text-align:center;color:var(--text-muted)">Could not load dishes. Make sure the server is running.</p>';
     }
 }
-document.addEventListener('DOMContentLoaded', loadFeatured);
+
+// Load recommended dishes
+async function loadRecommended() {
+    try {
+        const res = await fetch('/api/foods/recommended');
+        const data = await res.json();
+        const grid = document.getElementById('recommendedGrid');
+        if (data.success && data.foods.length > 0) {
+            grid.innerHTML = data.foods.map(f => foodCard(f)).join('');
+            initScrollAnimations();
+        } else {
+            // Hide section if no recommendations exist
+            grid.parentElement.parentElement.style.display = 'none';
+        }
+    } catch {
+        document.getElementById('recommendedGrid').innerHTML = '<p style="grid-column:1/-1;text-align:center;color:var(--text-muted)">Could not load recommendations.</p>';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    loadFeatured();
+    loadRecommended();
+});
 </script>
 </body>
 </html>

@@ -113,21 +113,28 @@ router.post('/login', async (req, res) => {
 router.get('/check-auth', verifyToken, authorize('restaurant'), async (req, res) => {
     try {
         const restaurant = await Restaurant.findById(req.user.id);
+        if (!restaurant) return res.json({ success: false, loggedIn: false });
         res.json({ 
             success: true, 
             loggedIn: true, 
             name: `${restaurant.restaurantName} - ${restaurant.branchName}`, 
             id: restaurant._id,
-            isActive: restaurant ? restaurant.isActive : false
+            isActive: restaurant.isActive
         });
     } catch (err) {
-        res.json({ success: true, loggedIn: false });
+        res.json({ success: false, loggedIn: false });
     }
 });
 
 // ── POST /api/restaurant/logout ───────────────────────────────────────────────
-router.post('/logout', (req, res) => {
-    res.json({ success: true, message: 'Logged out successfully' });
+router.post('/logout', verifyToken, authorize('restaurant'), async (req, res) => {
+    try {
+        await Restaurant.findByIdAndUpdate(req.user.id, { isLoggedIn: false });
+        res.json({ success: true, message: 'Logged out successfully' });
+    } catch (err) {
+        console.error('Restaurant logout error:', err);
+        res.status(500).json({ success: false, message: 'Server error during logout.' });
+    }
 });
 
 // ── PATCH /api/restaurant/status ──────────────────────────────────────────────

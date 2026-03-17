@@ -58,6 +58,7 @@
         <div class="spinner"></div>
     </div>
     <script src="/js/script.js"></script>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     <script>
         let currentUser = null;
 
@@ -82,8 +83,7 @@
 
             const payments = [
                 ['cod', 'fa-money-bill-wave', 'Cash on Delivery', 'Pay when your food arrives.'],
-                ['upi', 'fa-mobile-alt', 'UPI Payment', 'Pay via any UPI app.'],
-                ['card', 'fa-credit-card', 'Credit / Debit Card', 'Secure card payment.']
+                ['online', 'fa-credit-card', 'Pay Online', 'Pay securely via UPI, Cards, or Netbanking.']
             ];
             const paymentOptions = payments.map(([val, icon, label, desc]) => `
         <label style="display:flex;align-items:center;gap:16px;padding:14px;border:2px solid var(--border);border-radius:10px;cursor:pointer;transition:all 0.2s" class="payment-option">
@@ -92,32 +92,7 @@
             <div><div style="font-weight:600;font-size:0.9rem">${label}</div><div style="font-size:0.78rem;color:var(--text-muted)">${desc}</div></div>
         </label>`).join('');
 
-            const paymentDetailsHTML = `
-            <div id="upiDetails" style="display:none; margin-top: 15px;">
-                <label class="form-label">UPI ID</label>
-                <div class="input-icon-wrapper">
-                    <i class="fas fa-at"></i>
-                    <input type="text" id="upiId" class="form-control" placeholder="user@upi">
-                </div>
-            </div>
-            <div id="cardDetails" style="display:none; margin-top: 15px;">
-                <label class="form-label">Card Number</label>
-                <div class="input-icon-wrapper" style="margin-bottom: 10px;">
-                    <i class="fas fa-credit-card"></i>
-                    <input type="text" id="cardNumber" class="form-control" placeholder="XXXX XXXX XXXX XXXX">
-                </div>
-                <div style="display:flex; gap: 10px;">
-                    <div style="flex:1;">
-                        <label class="form-label">Expiry (MM/YY)</label>
-                        <input type="text" class="form-control" placeholder="MM/YY">
-                    </div>
-                    <div style="flex:1;">
-                        <label class="form-label">CVV</label>
-                        <input type="password" class="form-control" placeholder="123">
-                    </div>
-                </div>
-            </div>
-            `;
+            const paymentDetailsHTML = `<!-- Razorpay handles payment details -->`;
             document.getElementById('checkoutContent').innerHTML = `
         <div id="alertBox" style="display:none;margin-bottom:20px"></div>
         <form id="checkoutForm">
@@ -183,31 +158,116 @@
             const form = e.target;
             const btn = document.getElementById('placeOrderBtn');
             btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Placing order…';
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing…';
 
-            const body = {
+            const method = form.payment_method.value;
+            const orderData = {
                 delivery_name: form.delivery_name.value,
                 delivery_phone: form.delivery_phone.value,
                 delivery_address: form.delivery_address.value,
-                payment_method: form.payment_method.value,
-                upiId: document.getElementById('upiId') ? document.getElementById('upiId').value : '',
-                cardNumber: document.getElementById('cardNumber') ? document.getElementById('cardNumber').value : ''
+                payment_method: method,
             };
 
+            const grandTotalStr = document.getElementById('checkoutContent').innerText.match(/Total\s*₹([\d.]+)/);
+            let grandTotal = 0;
+            // The template uses variables but inside the handler we must fetch them again or use a hidden field
+            // Re-fetch cart for exact total to avoid UI spoofing, but the backend also validates.
+            
+            if (method === 'online') {
+                try {
+                    // Quick fetch of cart total from API just to be safe before hitting razorpay
+                    const cartRes = await fetch('/api/cart', { headers: getAuthHeaders() });
+                    const cartData = await cartRes.json();
+                    if (!cartData.success) throw new Error('Cart empty');
+                    const deliveryFee = 30;
+                    const finalAmount = cartData.total + deliveryFee;
+
+                    // 1. Create order
+                    const createOrderRes = await fetch('/api/payments/create-order', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+                        body: JSON.stringify({ amount: finalAmount })
+                    });
+                    const orderResult = await createOrderRes.json();
+                    if (!orderResult.success) throw new Error(orderResult.message || 'Error creating Razorpay order');
+
+                    if (orderResult.isDummy) {
+                        showToast('Test Mode: Simulating secure online payment...', 'success');
+                        setTimeout(async () => {
+                            orderData.paymentStatus = 'Paid';
+                            orderData.transactionId = orderResult.order.id;
+                            await submitFinalOrder(orderData, btn);
+                        }, 1500);
+                        return;
+                    }
+
+                    // 2. Open Razorpay options
+                    const options = {
+                        "key": "rzp_test_dummyKeyId12345", // Replace in production
+                        "amount": orderResult.order.amount,
+                        "currency": "INR",
+                        "name": "QuickBite",
+                        "description": "Food Delivery Order",
+                        "order_id": orderResult.order.id,
+                        "handler": async function (response) {
+                            // 3. Verify Payment
+                            const verifyRes = await fetch('/api/payments/verify-payment', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+                                body: JSON.stringify({
+                                    razorpay_order_id: response.razorpay_order_id,
+                                    razorpay_payment_id: response.razorpay_payment_id,
+                                    razorpay_signature: response.razorpay_signature
+                                })
+                            });
+                            const verifyResult = await verifyRes.json();
+                            
+                            if (verifyResult.success) {
+                                // 4. Place Actual Order
+                                orderData.paymentStatus = 'Paid';
+                                orderData.transactionId = response.razorpay_payment_id;
+                                await submitFinalOrder(orderData, btn);
+                            } else {
+                                alert('Payment verification failed. Please contact support.');
+                                btn.disabled = false;
+                                btn.innerHTML = '<i class="fas fa-check-circle"></i> Place Order';
+                            }
+                        },
+                        "prefill": {
+                            "name": orderData.delivery_name,
+                            "contact": orderData.delivery_phone
+                        },
+                        "theme": { "color": "#FF6B35" }
+                    };
+                    const rzp = new Razorpay(options);
+                    rzp.on('payment.failed', function (response){
+                        alert('Payment failed: ' + response.error.description);
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="fas fa-check-circle"></i> Place Order';
+                    });
+                    rzp.open();
+                } catch (err) {
+                    alert(err.message || 'Error initiating payment');
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-check-circle"></i> Place Order';
+                }
+            } else {
+                // COD Flow
+                await submitFinalOrder(orderData, btn);
+            }
+        }
+
+        async function submitFinalOrder(body, btn) {
             try {
                 const res = await fetch('/api/orders/place', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        ...getAuthHeaders()
-                    },
+                    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
                     body: JSON.stringify(body)
                 });
                 const data = await res.json();
                 if (data.success) {
                     showToast('Order placed! Redirecting…', 'success');
                     setTimeout(() => window.location.href = data.redirect, 800);
-
                 } else {
                     const box = document.getElementById('alertBox');
                     box.style.display = 'flex';
@@ -216,7 +276,8 @@
                     btn.disabled = false;
                     btn.innerHTML = '<i class="fas fa-check-circle"></i> Place Order';
                 }
-            } catch {
+            } catch (err) {
+                console.error('Final order submission error:', err);
                 showToast('Network error. Please try again.', 'error');
                 btn.disabled = false;
                 btn.innerHTML = '<i class="fas fa-check-circle"></i> Place Order';
@@ -224,10 +285,7 @@
         }
 
         window.togglePaymentDetails = function (val) {
-            const upiDetails = document.getElementById('upiDetails');
-            const cardDetails = document.getElementById('cardDetails');
-            if (upiDetails) upiDetails.style.display = val === 'upi' ? 'block' : 'none';
-            if (cardDetails) cardDetails.style.display = val === 'card' ? 'block' : 'none';
+            // Unused since we removed upiDetails and cardDetails
         };
 
         document.addEventListener('DOMContentLoaded', loadCheckout);

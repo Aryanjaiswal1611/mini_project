@@ -29,7 +29,8 @@ const orderSchema = new mongoose.Schema({
     payment_method:   { type: String, default: 'Cash on Delivery' },
     paymentDetails: {
         upiId: { type: String, default: '' },
-        cardNumber: { type: String, default: '' }
+        cardNumber: { type: String, default: '' },
+        transactionId: { type: String, default: '' }
     },
     orderStatus: {
         type: String,
