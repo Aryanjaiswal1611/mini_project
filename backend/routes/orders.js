@@ -55,17 +55,6 @@ router.post('/place', verifyToken, async (req, res) => {
             return res.json({ success: false, message: 'Restaurant not found. Please try again.' });
         }
 
-        // Only block if restaurant has been explicitly set to inactive (isActive === false)
-        // isActive defaults to false for new restaurants; treat it as open unless explicitly opened & then closed.
-        // Allow the order when the restaurant has never toggled the switch (isActive still default).
-        // Only hard-block if restaurant was once active and is now offline.
-        if (restaurant.isActive === false && restaurant.isLoggedIn === false) {
-            // Both are false means the restaurant never opened or explicitly went offline after being online.
-            // We only block if the restaurant has explicitly gone offline (isLoggedIn was set to false via logout).
-            // Since we can't distinguish "never opened" from "logged out", we allow order and let restaurant confirm.
-            // Remove this restriction entirely to unblock ordering:
-        }
-
         // Build order items
         const items = cartItems.map(ci => ({
             food_id: ci.food_id._id,
