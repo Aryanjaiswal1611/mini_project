@@ -43,8 +43,9 @@ router.post('/orders/:id/assign', requireRestaurant, async (req, res) => {
 
         if (!order) return res.status(404).json({ success: false, message: 'Order not found.' });
 
-        // Notify the specific delivery partner (if they are connected)
-        req.app.emit('order_assigned', { partnerId, order });
+        const io = req.app.get('io');
+        io.to(`order_${order._id}`).emit('status_update', { orderId: order._id, status: order.orderStatus });
+        io.to(`delivery_${partnerId}`).emit('order_assigned', { partnerId, order });
 
         res.json({ success: true, order, message: `Assigned to ${order.delivery_partner_id.name}` });
     } catch (err) {
@@ -148,25 +149,25 @@ router.patch('/status', ...requireRestaurant, async (req, res) => {
     }
 });
 
-// ── GET /api/restaurant/stream ────────────────────────────────────────────────
 router.get('/stream', requireRestaurant, (req, res) => {
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
 
-    const handleNewOrder = (order) => {
-        if (order.restaurantId.toString() === req.user.id.toString()) {
-            res.write(`data: ${JSON.stringify({ type: 'new_order', order })}\n\n`);
-        }
+    const io = req.app.get('io');
+    const room = `restaurant_${req.user.id}`;
+
+    const handleOrderUpdate = (data) => {
+        res.write(`data: ${JSON.stringify(data)}\n\n`);
     };
 
-    req.app.on('new_order', handleNewOrder);
+    io.to(room).on('new_order', handleOrderUpdate);
 
     const intervalId = setInterval(() => { res.write(':\n\n'); }, 15000);
 
     req.on('close', () => {
         clearInterval(intervalId);
-        req.app.removeListener('new_order', handleNewOrder);
+        io.removeListener('new_order', handleOrderUpdate);
     });
 });
 
@@ -196,9 +197,9 @@ router.post('/orders/:id/accept', requireRestaurant, async (req, res) => {
         );
 
         if (!order) return res.status(404).json({ success: false, message: 'Order not found.' });
-        
-        // Notify via socket.io
-        req.app.emit('order_status_update', { orderId: order._id, status: order.orderStatus });
+
+        const io = req.app.get('io');
+        io.to(`order_${order._id}`).emit('status_update', { orderId: order._id, status: order.orderStatus });
 
         res.json({ success: true, order, message: 'Order accepted successfully.' });
     } catch (err) {
@@ -221,8 +222,8 @@ router.post('/orders/:id/reject', requireRestaurant, async (req, res) => {
 
         if (!order) return res.status(404).json({ success: false, message: 'Order not found.' });
 
-        // Notify via socket.io
-        req.app.emit('order_status_update', { orderId: order._id, status: order.orderStatus });
+        const io = req.app.get('io');
+        io.to(`order_${order._id}`).emit('status_update', { orderId: order._id, status: order.orderStatus });
 
         res.json({ success: true, order, message: 'Order rejected successfully.' });
     } catch (err) {
@@ -252,8 +253,8 @@ router.post('/orders/:id/status', requireRestaurant, async (req, res) => {
 
         if (!order) return res.status(404).json({ success: false, message: 'Order not found.' });
 
-        // Notify via socket.io
-        req.app.emit('order_status_update', { orderId: order._id, status: order.orderStatus });
+        const io = req.app.get('io');
+        io.to(`order_${order._id}`).emit('status_update', { orderId: order._id, status: order.orderStatus });
 
         res.json({ success: true, order, message: `Status updated to ${status}.` });
     } catch (err) {
