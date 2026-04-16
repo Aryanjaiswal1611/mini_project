@@ -156,8 +156,8 @@ router.post('/orders/:id/status', ...requireDelivery, async (req, res) => {
             });
         }
 
-        // Notify via socket.io
-        req.app.emit('order_status_update', { orderId: updatedOrder._id, status: updatedOrder.orderStatus });
+        const io = req.app.get('io');
+        io.to(`order_${updatedOrder._id}`).emit('status_update', { orderId: updatedOrder._id, status: updatedOrder.orderStatus });
 
         res.json({ success: true, order: updatedOrder });
     } catch (error) {

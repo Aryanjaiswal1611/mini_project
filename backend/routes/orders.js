@@ -104,8 +104,8 @@ router.post('/place', verifyToken, async (req, res) => {
             });
         }
 
-        // Emit new order event for SSE
-        req.app.emit('new_order', order);
+        const io = req.app.get('io');
+        io.to(`restaurant_${order.restaurantId}`).emit('new_order', order);
 
         // Clear cart
         await Cart.deleteMany({ user_id: userId });

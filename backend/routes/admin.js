@@ -43,7 +43,9 @@ router.post('/orders/:id/assign', ...requireAdmin, async (req, res) => {
 
         if (!order) return res.status(404).json({ success: false, message: 'Order not found.' });
 
-        req.app.emit('order_assigned', { partnerId, order });
+        const io = req.app.get('io');
+        io.to(`order_${order._id}`).emit('status_update', { orderId: order._id, status: order.orderStatus });
+        io.to(`delivery_${partnerId}`).emit('order_assigned', { partnerId, order });
 
         res.json({ success: true, order, message: `Assigned to ${order.delivery_partner_id.name}` });
     } catch (err) {

@@ -1,86 +1,81 @@
-import { createContext, useContext, useState, useEffect } from 'react'
-import { api } from '../services/api'
+import { createContext, useContext, useState, useEffect, useCallback } from 'react'
+import { authApi } from '../services/api'
 
 const AuthContext = createContext(null)
+
+function buildUser(data) {
+  return {
+    id: data.user_id,
+    name: data.user_name,
+    role: data.role
+  }
+}
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
 
-  const checkAuth = async () => {
-    try {
-      const token = localStorage.getItem('token')
-      if (!token) {
-        setLoading(false)
-        return
-      }
+  const checkAuth = useCallback(async () => {
+    const token = localStorage.getItem('token')
+    if (!token) {
+      setLoading(false)
+      return
+    }
 
-      const data = await api.get('/me')
+    try {
+      const data = await authApi.getMe()
       if (data.loggedIn) {
-        setUser({
-          id: data.user_id,
-          name: data.user_name,
-          role: data.role
-        })
+        setUser(buildUser(data))
       } else {
         localStorage.removeItem('token')
       }
-    } catch (error) {
-      console.error('Auth check failed:', error)
+    } catch {
+      localStorage.removeItem('token')
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    checkAuth()
+  }, [checkAuth])
 
   const login = async (email, password) => {
-    const data = await api.post('/login', { email, password })
+    const data = await authApi.login(email, password)
     if (data.success) {
       localStorage.setItem('token', data.token)
-      setUser({
-        id: data.user.id,
-        name: data.user.name,
-        role: data.user.role
-      })
+      setUser(data.user)
     }
     return data
   }
 
   const signup = async (userData) => {
-    const data = await api.post('/signup', userData)
+    const data = await authApi.signup(userData)
     if (data.success) {
       localStorage.setItem('token', data.token)
-      setUser({
-        id: data.user.id,
-        name: data.user.name,
-        role: data.user.role
-      })
+      setUser(data.user)
     }
     return data
   }
 
   const logout = async () => {
     try {
-      await api.post('/logout', {})
-    } catch (error) {
-      console.error('Logout error:', error)
+      await authApi.logout()
+    } catch (err) {
+      console.error('Logout error:', err)
     }
     localStorage.removeItem('token')
     setUser(null)
   }
 
-  const isAuthenticated = !!user
-  const isAdmin = user?.role === 'admin'
-  const isRestaurant = user?.role === 'restaurant'
-  const isDelivery = user?.role === 'delivery'
-
   return (
     <AuthContext.Provider value={{
       user,
       loading,
-      isAuthenticated,
-      isAdmin,
-      isRestaurant,
-      isDelivery,
+      isAuthenticated: !!user,
+      isAdmin: user?.role === 'admin',
+      isRestaurant: user?.role === 'restaurant',
+      isDelivery: user?.role === 'delivery',
       login,
       signup,
       logout,

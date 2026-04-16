@@ -6,57 +6,31 @@ import { foodApi } from '../services/api'
 export default function Home() {
   const [featured, setFeatured] = useState([])
   const [recommended, setRecommended] = useState([])
-  const [loadingFeatured, setLoadingFeatured] = useState(true)
-  const [loadingRecommended, setLoadingRecommended] = useState(true)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    loadFeatured()
-    loadRecommended()
+    Promise.all([foodApi.getFeatured(), foodApi.getRecommended()])
+      .then(([featuredRes, recommendedRes]) => {
+        if (featuredRes.success) setFeatured(featuredRes.foods)
+        if (recommendedRes.success) setRecommended(recommendedRes.foods)
+      })
+      .catch(err => console.error('Failed to load data:', err))
+      .finally(() => setLoading(false))
   }, [])
 
   useEffect(() => {
+    if (featured.length === 0 && recommended.length === 0) return
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('visible')
-        }
+        if (entry.isIntersecting) entry.target.classList.add('visible')
       })
     }, { threshold: 0.1 })
-
     document.querySelectorAll('.food-card').forEach(el => observer.observe(el))
-
     return () => observer.disconnect()
   }, [featured, recommended])
 
-  const loadFeatured = async () => {
-    try {
-      const data = await foodApi.getFeatured()
-      if (data.success && data.foods.length > 0) {
-        setFeatured(data.foods)
-      }
-    } catch (error) {
-      console.error('Failed to load featured:', error)
-    } finally {
-      setLoadingFeatured(false)
-    }
-  }
-
-  const loadRecommended = async () => {
-    try {
-      const data = await foodApi.getRecommended()
-      if (data.success && data.foods.length > 0) {
-        setRecommended(data.foods)
-      }
-    } catch (error) {
-      console.error('Failed to load recommended:', error)
-    } finally {
-      setLoadingRecommended(false)
-    }
-  }
-
   return (
     <div className="page-wrapper">
-      {/* Hero Section */}
       <section className="hero">
         <div className="hero-container">
           <div className="hero-text">
@@ -118,7 +92,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Recommended Section */}
       {recommended.length > 0 && (
         <section className="section" style={{ background: '#f9f9f9' }}>
           <div className="container">
@@ -127,22 +100,13 @@ export default function Home() {
               <h2 className="section-title">Recommended For You</h2>
               <p className="section-subtitle">Our most frequently ordered and highly rated dishes</p>
             </div>
-            {loadingRecommended ? (
-              <div className="loading-container">
-                <div className="spinner"></div>
-              </div>
-            ) : (
-              <div className="food-grid">
-                {recommended.map(food => (
-                  <FoodCard key={food._id} food={food} />
-                ))}
-              </div>
-            )}
+            <div className="food-grid">
+              {recommended.map(food => <FoodCard key={food._id} food={food} />)}
+            </div>
           </div>
         </section>
       )}
 
-      {/* Featured Section */}
       <section className="section" style={{ background: '#fff' }}>
         <div className="container">
           <div className="section-header">
@@ -150,16 +114,14 @@ export default function Home() {
             <h2 className="section-title">Featured Dishes</h2>
             <p className="section-subtitle">Handpicked favorites loved by our customers every day</p>
           </div>
-          {loadingFeatured ? (
+          {loading ? (
             <div className="loading-container">
               <div className="spinner"></div>
             </div>
           ) : featured.length > 0 ? (
             <>
               <div className="food-grid">
-                {featured.map(food => (
-                  <FoodCard key={food._id} food={food} />
-                ))}
+                {featured.map(food => <FoodCard key={food._id} food={food} />)}
               </div>
               <div style={{ textAlign: 'center', marginTop: '40px' }}>
                 <Link to="/menu" className="btn btn-primary btn-lg">
@@ -176,7 +138,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* How It Works */}
       <section className="section how-section" id="how-it-works">
         <div className="container">
           <div className="section-header">
@@ -213,7 +174,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Why Choose Us */}
       <section className="section" style={{ background: '#fff' }}>
         <div className="container">
           <div className="section-header">

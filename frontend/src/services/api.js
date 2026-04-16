@@ -2,7 +2,9 @@ const BASE_URL = '/api'
 
 function getAuthHeaders() {
   const token = localStorage.getItem('token')
-  return token ? { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' } : { 'Content-Type': 'application/json' }
+  return token
+    ? { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+    : { 'Content-Type': 'application/json' }
 }
 
 async function handleResponse(response) {
@@ -13,53 +15,30 @@ async function handleResponse(response) {
   return data
 }
 
-export const api = {
-  async get(endpoint) {
-    const response = await fetch(`${BASE_URL}${endpoint}`, {
-      method: 'GET',
-      headers: getAuthHeaders()
-    })
-    return handleResponse(response)
-  },
-
-  async post(endpoint, body) {
-    const response = await fetch(`${BASE_URL}${endpoint}`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(body)
-    })
-    return handleResponse(response)
-  },
-
-  async put(endpoint, body) {
-    const response = await fetch(`${BASE_URL}${endpoint}`, {
-      method: 'PUT',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(body)
-    })
-    return handleResponse(response)
-  },
-
-  async patch(endpoint, body) {
-    const response = await fetch(`${BASE_URL}${endpoint}`, {
-      method: 'PATCH',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(body)
-    })
-    return handleResponse(response)
-  },
-
-  async delete(endpoint, body) {
-    const response = await fetch(`${BASE_URL}${endpoint}`, {
-      method: 'DELETE',
-      headers: getAuthHeaders(),
-      body: body ? JSON.stringify(body) : undefined
-    })
-    return handleResponse(response)
-  }
+async function request(method, endpoint, body = null) {
+  const response = await fetch(`${BASE_URL}${endpoint}`, {
+    method,
+    headers: getAuthHeaders(),
+    body: body ? JSON.stringify(body) : null
+  })
+  return handleResponse(response)
 }
 
-// Food API
+export const api = {
+  get: (endpoint) => request('GET', endpoint),
+  post: (endpoint, body) => request('POST', endpoint, body),
+  put: (endpoint, body) => request('PUT', endpoint, body),
+  patch: (endpoint, body) => request('PATCH', endpoint, body),
+  delete: (endpoint, body) => request('DELETE', endpoint, body)
+}
+
+export const authApi = {
+  login: (email, password) => api.post('/login', { email, password }),
+  signup: (userData) => api.post('/signup', userData),
+  logout: () => api.post('/logout', {}),
+  getMe: () => api.get('/me')
+}
+
 export const foodApi = {
   getAll: () => api.get('/foods'),
   getFeatured: () => api.get('/foods/featured'),
@@ -68,7 +47,13 @@ export const foodApi = {
   getById: (id) => api.get(`/foods/${id}`)
 }
 
-// Order API
+export const cartApi = {
+  get: () => api.get('/cart'),
+  add: (foodId) => api.post('/cart/add', { food_id: foodId }),
+  update: (cartId, change) => api.put('/cart/update', { cart_id: cartId, change }),
+  remove: (cartId) => api.delete('/cart/remove', { cart_id: cartId })
+}
+
 export const orderApi = {
   place: (orderData) => api.post('/orders/place', orderData),
   getHistory: () => api.get('/orders/history'),
@@ -76,18 +61,15 @@ export const orderApi = {
   rateDelivery: (id, rating) => api.post(`/orders/${id}/rate-delivery`, { rating })
 }
 
-// Payment API
 export const paymentApi = {
   createOrder: (amount) => api.post('/payments/create-order', { amount }),
   verifyPayment: (data) => api.post('/payments/verify-payment', data)
 }
 
-// Feedback API
 export const feedbackApi = {
   submit: (data) => api.post('/feedback/submit', data)
 }
 
-// Restaurant API
 export const restaurantApi = {
   login: (email, password) => api.post('/restaurant/login', { email, password }),
   signup: (data) => api.post('/restaurant/signup', data),
@@ -102,7 +84,6 @@ export const restaurantApi = {
   getPartners: () => api.get('/restaurant/delivery-partners')
 }
 
-// Dishes API
 export const dishesApi = {
   getByRestaurant: (restaurantId) => api.get(`/dishes/restaurant/${restaurantId}`),
   create: (formData) => api.post('/dishes', formData),
@@ -111,7 +92,6 @@ export const dishesApi = {
   toggleAvailability: (id, availability) => api.patch(`/dishes/${id}/availability`, { availability })
 }
 
-// Delivery API
 export const deliveryApi = {
   login: (email, password) => api.post('/delivery/login', { email, password }),
   signup: (data) => api.post('/delivery/signup', data),
@@ -119,10 +99,10 @@ export const deliveryApi = {
   getMe: () => api.get('/delivery/me'),
   toggleStatus: (is_online) => api.post('/delivery/toggle-status', { is_online }),
   getOrders: () => api.get('/delivery/orders'),
-  updateStatus: (id, status, verificationCode) => api.post(`/delivery/orders/${id}/status`, { status, verificationCode })
+  updateStatus: (id, status, verificationCode) =>
+    api.post(`/delivery/orders/${id}/status`, { status, verificationCode })
 }
 
-// Admin API
 export const adminApi = {
   getStats: () => api.get('/admin/stats'),
   getFoods: () => api.get('/admin/foods'),

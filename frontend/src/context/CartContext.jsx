@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
-import { api } from '../services/api'
+import { cartApi } from '../services/api'
 import { useAuth } from './AuthContext'
 import { useToast } from './ToastContext'
 
@@ -23,7 +23,7 @@ export function CartProvider({ children }) {
 
     try {
       setLoading(true)
-      const data = await api.get('/cart')
+      const data = await cartApi.get()
       if (data.success) {
         setItems(data.items || [])
         setCount(data.count || 0)
@@ -42,20 +42,21 @@ export function CartProvider({ children }) {
 
   const addToCart = async (foodId) => {
     try {
-      const data = await api.post('/cart/add', { food_id: foodId })
+      const data = await cartApi.add(foodId)
       if (data.success) {
         showToast(data.message || 'Added to cart!', 'success')
         setCount(data.cart_count)
         setTotal(data.cart_total)
         await fetchCart()
         return true
-      } else if (data.redirect) {
+      }
+      if (data.redirect) {
         showToast(data.message || 'Please login to continue.', 'info')
         return false
       }
       showToast(data.message || 'Something went wrong', 'error')
       return false
-    } catch (error) {
+    } catch {
       showToast('Network error. Please try again.', 'error')
       return false
     }
@@ -63,7 +64,7 @@ export function CartProvider({ children }) {
 
   const updateQuantity = async (cartId, change) => {
     try {
-      const data = await api.put('/cart/update', { cart_id: cartId, change })
+      const data = await cartApi.update(cartId, change)
       if (data.success) {
         setCount(data.cart_count)
         setTotal(data.cart_total)
@@ -72,7 +73,7 @@ export function CartProvider({ children }) {
       }
       showToast(data.message || 'Error updating cart', 'error')
       return null
-    } catch (error) {
+    } catch {
       showToast('Network error. Please try again.', 'error')
       return null
     }
@@ -82,7 +83,7 @@ export function CartProvider({ children }) {
     if (!window.confirm('Remove this item from cart?')) return
 
     try {
-      const data = await api.delete('/cart/remove', { cart_id: cartId })
+      const data = await cartApi.remove(cartId)
       if (data.success) {
         showToast('Item removed from cart', 'info')
         setCount(data.cart_count)
@@ -91,7 +92,7 @@ export function CartProvider({ children }) {
         return true
       }
       return false
-    } catch (error) {
+    } catch {
       showToast('Network error. Please try again.', 'error')
       return false
     }
