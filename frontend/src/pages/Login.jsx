@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Link, useNavigate, useLocation } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
 
@@ -11,7 +11,6 @@ export default function Login() {
   const { login, isAuthenticated } = useAuth()
   const { showToast } = useToast()
   const navigate = useNavigate()
-  const location = useLocation()
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -98,7 +97,7 @@ export default function Login() {
 
         <div className="auth-divider">or</div>
         <div className="auth-footer">
-          Don't have an account? <Link to="/signup">Create one for free</Link>
+          Don&apos;t have an account? <Link to="/signup">Create one for free</Link>
         </div>
         <div className="auth-footer" style={{ marginTop: '10px' }}>
           <Link to="/restaurant/login" style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>

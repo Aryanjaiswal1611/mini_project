@@ -110,7 +110,7 @@ export default function Home() {
       <section className="section" style={{ background: '#fff' }}>
         <div className="container">
           <div className="section-header">
-            <div className="section-tag"><i className="fas fa-fire"></i> Today's Specials</div>
+            <div className="section-tag"><i className="fas fa-fire"></i> Today&apos;s Specials</div>
             <h2 className="section-title">Featured Dishes</h2>
             <p className="section-subtitle">Handpicked favorites loved by our customers every day</p>
           </div>
